@@ -1,0 +1,1053 @@
+#include "Poker.h"
+#include <iostream>
+#include <ctime>
+#include <stdlib.h>
+#include <conio.h>
+#include <string>
+#include <iomanip>
+
+using namespace std;
+
+Poker::Poker()      //Inicia las variables necesarias para poder jugar
+{
+    name = "";
+    bolsa = 100;
+    for (int i = 0; i<5 ; i++)
+    {
+        mano[i].numero = 0;
+        mano[i].signo = "";
+        mano[i].bloqueado = false;
+    }
+    for (int i = 0; i<54 ; i++)
+    {
+        mazo[i] = false;
+    }
+    srand(time(NULL));
+    askNombre();
+    system("cls");
+    askBolsa();
+    system("cls");
+}
+
+Poker::~Poker()
+{
+    //dtor
+}
+
+//Set's y get's de validacion
+void Poker::setName(std::string nombre)
+{
+    this->name = nombre;
+}
+
+string Poker::getName()
+{
+    return name;
+}
+
+void Poker::setBolsa(int numero)
+{
+    if(numero > 0 && numero <= 2147483647)
+    {
+        this->bolsa = numero;
+    }
+}
+
+int Poker::getBolsa()
+{
+    return bolsa;
+}
+
+void Poker::setCarta(Carta carta, int posicion) //manda una carta para guardarla en la mano
+{
+    this->mano[posicion] = carta;
+}
+
+void Poker::setCarta(int posicion, int numero, string signo, bool bloqueado) //manda los valores de una carta para guadrarla en la mano
+{
+    this->mano[posicion].numero = numero;
+    this->mano[posicion].signo = signo;
+    this->mano[posicion].bloqueado = bloqueado;
+}
+
+Carta Poker::getCarta(int posicion) //regresa la carta de una posicion en la mano
+{
+    if(posicion > 0 && posicion < 6)
+    {
+        return mano[posicion -1];
+    }
+    else
+    {
+        return mano[0];
+    }
+
+}
+
+void Poker::play()  //Manda a llamar todo lo necesario para jugar
+{
+    //Inicializa la mano en 0's
+    for (int i = 0; i<5 ; i++)
+    {
+        mano[i].numero = 0;
+        mano[i].signo = "";
+        mano[i].bloqueado = false;
+    }
+
+    //Variables para el menu
+    int posicion = 1;
+    short movimiento = 0;
+
+    apostar();
+    entregarMano();
+
+    for(int i = 0; i<5; i++){
+        translate(mano[i].numero, mano[i].signo);
+    }
+    ordenar();
+    moving(movimiento, posicion);
+
+    //seleccion de cartas a bloquear
+    do
+    {
+        movimiento = getch();
+        moving(movimiento, posicion);
+    }while (!(posicion == 6 && movimiento == 13));
+
+    cambiarCartas();
+    ordenar();
+
+    system("cls");
+    cout<<name<<" sus cartas son: "<<endl<<endl;
+    imprimirCartas();
+    cout<<endl<<endl;
+    comprobarVictoria();
+    cout<<endl<<endl;
+    cout<<"Presione una tecla para continuar . . ."<<endl;
+    string valnull = "";
+    getline(cin, valnull);
+}
+
+void Poker::askNombre()     //pide un string de manera segura
+{
+    try{
+        cout<<"Por favor, introduzca su nombre:";
+        getline(cin, Poker::name);
+    }catch(...){
+        cout<<"Ha ocurrido un error, intente nuevamente:";
+        askNombre();
+    }
+}
+
+void Poker::apostar()       //Llama a una funcion que pide un int de manera segura
+{
+    int apuesta;
+    string mensaje = "Su saldo actual es de: " + std::to_string(bolsa) + ", Ingrese el monto que desea apostar:";
+    do
+    {
+        askInt(&apuesta, mensaje);
+    }while(apuesta > bolsa || apuesta <= 0);
+    bolsa -= apuesta;
+}
+
+void Poker::askInt(int * numero, string mensaje)    //Pide un int de manera segura
+{
+    string temp = "";
+    try
+    {
+        cout<<mensaje;
+        getline(cin, temp);
+        (*numero) = std::stoi(temp);
+    }
+    catch(invalid_argument ia)
+    {
+        system("cls");
+        cout<<"Error, ingreso un caracter no valido"<<endl;
+        askInt(numero, mensaje);
+    }
+    catch(out_of_range oor)
+    {
+        system("cls");
+        cout<<"Error, ingreso un valor demasiado grande"<<endl;
+        askInt(numero, mensaje);
+    }
+    catch(...)
+    {
+        system("cls");
+        cout<<"Error"<<endl;
+        askInt(numero, mensaje);
+    }
+}
+
+void Poker::askBolsa()  //Pregunta cuanto quiere depositar, solo se usa al inicio
+{
+    int money;
+    do
+    {
+        askInt(&money, "Ingrese el monto que desea depositar:");
+    }while(money <= 0);
+    this->bolsa = money;
+}
+
+void Poker::entregarMano()  //entrega 5 cartas a la mano
+{
+    int temp = 0;
+    for (int i = 0; i<54; i++)
+    {
+        if(mazo[i] == false)
+        {
+            temp++;
+        }
+    }
+    if(temp >= 5){
+        for(int i = 0; i<5 ; i++)
+        {
+            generateCarta(mano[i]);
+        }
+    }
+    else
+    {
+        for (int i = 0; i<54; i++)
+        {
+            mazo[i] = false;
+        }
+        for(int i = 0; i<5 ; i++)
+        {
+            generateCarta(mano[i]);
+        }
+    }
+}
+
+void Poker::generateCarta(Carta & carta)    //genera una carta aleatoria y guarda el numero
+{
+    int temp = 0;
+    temp = rand() % 52 + 1;
+
+    while(mazo[temp - 1] == true)
+    {
+        if(temp == 52){
+            temp = 1;
+        }
+        else
+        {
+            temp++;
+        }
+    }
+    carta.numero = temp;
+    mazo[temp - 1] = true;
+    translate(carta.numero, carta.signo);
+}
+
+void Poker::translate(int numero, std::string & texto)  //en base al numero de la carta asigna el texto
+{
+    switch(numero){
+    case 1:
+        texto = " A\3";
+        break;
+    case 2:
+        texto = " 2\3";
+        break;
+    case 3:
+        texto = " 3\3";
+        break;
+    case 4:
+        texto = " 4\3";
+        break;
+    case 5:
+        texto = " 5\3";
+        break;
+    case 6:
+        texto = " 6\3";
+        break;
+    case 7:
+        texto = " 7\3";
+        break;
+    case 8:
+        texto = " 8\3";
+        break;
+    case 9:
+        texto = " 9\3";
+        break;
+    case 10:
+        texto = "10\3";
+        break;
+    case 11:
+        texto = " J\3";
+        break;
+    case 12:
+        texto = " Q\3";
+        break;
+    case 13:
+        texto = " K\3";
+        break;
+    case 14:
+        texto = " A\4";
+        break;
+    case 15:
+        texto = " 2\4";
+        break;
+    case 16:
+        texto = " 3\4";
+        break;
+    case 17:
+        texto = " 4\4";
+        break;
+    case 18:
+        texto = " 5\4";
+        break;
+    case 19:
+        texto = " 6\4";
+        break;
+    case 20:
+        texto = " 7\4";
+        break;
+    case 21:
+        texto = " 8\4";
+        break;
+    case 22:
+        texto = " 9\4";
+        break;
+    case 23:
+        texto = "10\4";
+        break;
+    case 24:
+        texto = " J\4";
+        break;
+    case 25:
+        texto = " Q\4";
+        break;
+    case 26:
+        texto = " K\4";
+        break;
+    case 27:
+        texto = " A\5";
+        break;
+    case 28:
+        texto = " 2\5";
+        break;
+    case 29:
+        texto = " 3\5";
+        break;
+    case 30:
+        texto = " 4\5";
+        break;
+    case 31:
+        texto = " 5\5";
+        break;
+    case 32:
+        texto = " 6\5";
+        break;
+    case 33:
+        texto = " 7\5";
+        break;
+    case 34:
+        texto = " 8\5";
+        break;
+    case 35:
+        texto = " 9\5";
+        break;
+    case 36:
+        texto = "10\5";
+        break;
+    case 37:
+        texto = " J\5";
+        break;
+    case 38:
+        texto = " Q\5";
+        break;
+    case 39:
+        texto = " K\5";
+        break;
+    case 40:
+        texto = " A\6";
+        break;
+    case 41:
+        texto = " 2\6";
+        break;
+    case 42:
+        texto = " 3\6";
+        break;
+    case 43:
+        texto = " 4\6";
+        break;
+    case 44:
+        texto = " 5\6";
+        break;
+    case 45:
+        texto = " 6\6";
+        break;
+    case 46:
+        texto = " 7\6";
+        break;
+    case 47:
+        texto = " 8\6";
+        break;
+    case 48:
+        texto = " 9\6";
+        break;
+    case 49:
+        texto = "10\6";
+        break;
+    case 50:
+        texto = " J\6";
+        break;
+    case 51:
+        texto = " Q\6";
+        break;
+    case 52:
+        texto = " K\6";
+        break;
+    case 53:
+        texto = "JO1";
+        break;
+    case 54:
+        texto = "JO2";
+        break;
+    default:
+        texto = "Err";
+    }
+}
+
+void Poker::imprimirCartas()    //Imrpime cartas de manera estetica
+{
+    char colu = 186;
+    char sude = 187;
+    char inde = 188;
+    char iniz = 200;
+    char suiz = 201;
+    char fila = 205;
+
+    cout<<suiz<<fila<<fila<<fila<<sude<<"   "<<suiz<<fila<<fila<<fila<<sude<<"   "<<suiz<<fila<<fila<<fila<<sude<<"   "<<suiz<<fila<<fila<<fila<<sude<<"   "<<suiz<<fila<<fila<<fila<<sude<<endl;
+    cout<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<endl;
+    cout<<colu<<setw(3)<< mano[0].signo <<colu<<"   "<<colu<<setw(3)<< mano[1].signo <<colu<<"   "<<colu<<setw(3)<< mano[2].signo <<colu<<"   "<<colu<<setw(3)<< mano[3].signo <<colu<<"   "<<colu<<setw(3)<< mano[4].signo <<colu<<endl;
+    cout<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<"   "<<colu<<endl;
+    cout<<iniz<<fila<<fila<<fila<<inde<<"   "<<iniz<<fila<<fila<<fila<<inde<<"   "<<iniz<<fila<<fila<<fila<<inde<<"   "<<iniz<<fila<<fila<<fila<<inde<<"   "<<iniz<<fila<<fila<<fila<<inde<<endl;
+
+}
+
+void Poker::moving(short & movimiento, int & posicion)  //menu de seleccion de cartas a bloquear
+{
+
+    system("cls");
+    cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+    imprimirCartas();
+    if (movimiento == 75){
+        if(posicion > 1){
+            posicion--;
+        }else{
+            posicion = 6;
+        }
+    }
+    if (movimiento == 77){
+        if(posicion < 6){
+            posicion++;
+        }else{
+            posicion = 1;
+        }
+    }
+    switch(posicion){
+    case 1:
+        cout<<" (*)     ( )     ( )     ( )     ( )    Terminar( )"<<endl;
+        break;
+    case 2:
+        cout<<" ( )     (*)     ( )     ( )     ( )    Terminar( )"<<endl;
+        break;
+    case 3:
+        cout<<" ( )     ( )     (*)     ( )     ( )    Terminar( )"<<endl;
+        break;
+    case 4:
+        cout<<" ( )     ( )     ( )     (*)     ( )    Terminar( )"<<endl;
+        break;
+    case 5:
+        cout<<" ( )     ( )     ( )     ( )     (*)    Terminar( )"<<endl;
+        break;
+    case 6:
+        cout<<" ( )     ( )     ( )     ( )     ( )    Terminar(*)"<<endl;
+        break;
+    default:
+        cout<<"movimiento: "<<(int)movimiento<<endl;
+    }
+
+    if (movimiento == 13 && posicion != 6){
+        if (mano[posicion - 1].bloqueado){
+            mano[posicion - 1].bloqueado = false;
+        }else{
+            mano[posicion - 1].bloqueado = true;
+        }
+    }
+    for (int i = 0; i < 5; i++){
+        cout<<" ";
+        if (mano[i].bloqueado){
+            cout<<"(*)    ";
+        }else{
+            cout<<"( )    ";
+        }
+    }
+
+}
+
+void Poker::cambiarCartas()     //cambia las cartas que no han sido bloqueadas
+{
+    //revisar cuantas cartas se van a cambiar
+    int cartas = 0;
+    for (int i = 0; i < 5; i++)
+    {
+        if (!(mano[i].bloqueado))
+        {
+            cartas++;
+        }
+    }
+
+    //revisar que existan cartas
+
+    int temp = 0;
+    for (int i = 0; i<54; i++)
+    {
+        if(mazo[i] == false)
+        {
+            temp++;
+        }
+    }
+
+    if(temp >= cartas){                     //Si existen cartas suficientes las entrega
+        for(int i = 0; i<5 ; i++)
+        {
+            if(mano[i].bloqueado == false){
+                generateCarta(mano[i]);
+            }
+        }
+    }
+    else                                    //Si no existen cartas suficientes reinicia
+    {                                       //el mazo menos las que estan bloqueadas
+        for (int i = 0; i<54; i++)          //y entrega las cartas
+        {
+            mazo[i] = false;
+        }
+        for(int j = 0; j<5; j++)
+        {
+            if(mano[j].bloqueado == true)
+            {
+                mazo[(mano[j].numero - 1)] == true;
+            }
+        }
+        for(int i = 0; i<5 ; i++)
+        {
+            if(mano[i].bloqueado == false)
+            {
+                generateCarta(mano[i]);
+            }
+        }
+    }
+}
+
+void Poker::ordenar()       //ordena las cartas en orden ascendente segun el numero de carta
+{
+    int auxNumero = 0;
+    string auxSigno = "";
+    bool auxBloqueado = false;
+
+    for(unsigned int i = 0;i < 5 ; i++)
+    {
+        for(unsigned int j = 0;j < 4; j++)
+        {
+            if(mano[j].numero > mano[j+1].numero)
+            {
+                auxNumero = mano[j].numero;
+                auxSigno = mano[j].signo;
+                auxBloqueado = mano[j].bloqueado;
+
+                mano[j].numero = mano[j+1].numero;
+                mano[j].signo = mano[j+1].signo;
+                mano[j].bloqueado = mano[j+1].bloqueado;
+
+
+                mano[j+1].numero = auxNumero;
+                mano[j+1].signo = auxSigno;
+                mano[j+1].bloqueado = auxBloqueado;
+            }
+        }
+    }
+}
+
+void Poker::ordenarComprobar()      //ordena las cartas en orden ascendente segun el numero de carta (sin validar el palo)
+{
+    int auxNumero = 0;
+    string auxSigno = "";
+    bool auxBloqueado = false;
+
+    for(unsigned int i = 0;i < 5 ; i++)
+    {
+        for(unsigned int j = 0;j < 4; j++)
+        {
+            if(((mano[j].numero - 1) % 13) > ((mano[j+1].numero - 1) % 13))
+            {
+                auxNumero = mano[j].numero;
+                auxSigno = mano[j].signo;
+                auxBloqueado = mano[j].bloqueado;
+
+                mano[j].numero = mano[j+1].numero;
+                mano[j].signo = mano[j+1].signo;
+                mano[j].bloqueado = mano[j+1].bloqueado;
+
+
+                mano[j+1].numero = auxNumero;
+                mano[j+1].signo = auxSigno;
+                mano[j+1].bloqueado = auxBloqueado;
+            }
+        }
+    }
+
+}
+
+void Poker::comprobarVictoria() //comprueba todas las formas posibles de ganar en orden
+{
+    if(comprobarFI())
+    {
+        ordenar();
+        system("cls");
+        cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+        imprimirCartas();
+        cout<<"Gano con Flor Imperial"<<endl;
+        bolsa += 250;
+    }
+    else
+    {
+        if(comprobarFC())
+        {
+            ordenarComprobar();
+            system("cls");
+            cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+            imprimirCartas();
+            cout<<"Gano con Flor Corrida"<<endl;
+            bolsa += 150;
+        }
+        else
+        {
+            if(comprobarPo())
+            {
+                ordenarComprobar();
+                system("cls");
+                cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+                imprimirCartas();
+                cout<<"Gano con Poker"<<endl;
+                bolsa += 100;
+            }
+            else
+            {
+                if(comprobarC())
+                {
+                    ordenar();
+                    system("cls");
+                    cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+                    imprimirCartas();
+                    cout<<"Gano con Color"<<endl;
+                    bolsa += 75;
+                }
+                else
+                {
+                    if(comprobarE())
+                    {
+                        ordenarComprobar();
+                        system("cls");
+                        cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+                        imprimirCartas();
+                        cout<<"Gano con Escalera"<<endl;
+                        bolsa += 75;
+                    }
+                    else
+                    {
+                        if(comprobarFH())
+                        {
+                            ordenarComprobar();
+                            system("cls");
+                            cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+                            imprimirCartas();
+                            cout<<"Gano con Full House"<<endl;
+                            bolsa += 50;
+                        }
+                        else
+                        {
+                            if(comprobarT())
+                            {
+                                ordenarComprobar();
+                                system("cls");
+                                cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+                                imprimirCartas();
+                                cout<<"Gano con Tercia"<<endl;
+                                bolsa += 30;
+                            }
+                            else
+                            {
+                                if(comprobarDP())
+                                {
+                                    ordenarComprobar();
+                                    system("cls");
+                                    cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+                                    imprimirCartas();
+                                    cout<<"Gano con Dos Pares"<<endl;
+                                    bolsa += 15;
+                                }
+                                else
+                                {
+                                    if(comprobarPa())
+                                    {
+                                        ordenarComprobar();
+                                        system("cls");
+                                        cout<<name<<" su Saldo actual es de: "<<bolsa<<", y sus cartas son: "<<endl<<endl;
+                                        imprimirCartas();
+                                        cout<<"Gano con Par"<<endl;
+                                        bolsa += 5;
+                                    }
+                                    else
+                                    {
+                                        cout<<"Perdio..."<<endl;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+bool Poker::comprobarFI()
+{
+    int palo = ((int)(mano[0].signo[2]));
+    bool toReturn = true;
+
+    switch(palo)
+    {
+    case 3:
+        for(int i = 0; i<4; i++)
+        {
+            if(mano[i+1].numero <10 || mano[i+1].numero >13)
+            {
+                toReturn = false;
+            }
+        }
+        break;
+    case 4:
+        for(int i = 0; i<4; i++)
+        {
+            if(mano[i+1].numero <23 || mano[i+1].numero >26)
+            {
+                toReturn = false;
+            }
+        }
+        break;
+    case 5:
+        for(int i = 0; i<4; i++)
+        {
+            if(mano[i+1].numero <36 || mano[i+1].numero >39)
+            {
+                toReturn = false;
+            }
+        }
+        break;
+    case 6:
+        for(int i = 0; i<4; i++)
+        {
+            if(mano[i+1].numero <49 || mano[i+1].numero >52)
+            {
+                toReturn = false;
+            }
+        }
+        break;
+    default:
+        cout<<"Ha ocurrido un error"<<endl;
+        system("pause");
+    }
+
+    return toReturn;
+}
+
+bool Poker::comprobarFC()
+{
+    ordenarComprobar();
+    char palo = (mano[0].signo[2]);
+    bool toReturn = true;
+
+    for(int i = 0; i<5; i++)
+    {
+        if((mano[i].signo[3]) != palo)
+        {
+            toReturn = false;
+        }
+    }
+
+    for(int i = 0; i<4 ; i++)
+    {
+        if(!(mano[i+1].numero == (mano[i].numero + 1)))
+        {
+            toReturn = false;
+        }
+    }
+
+    ordenar();
+
+    return toReturn;
+
+}
+
+bool Poker::comprobarPo()
+{
+    bool toReturn = true;
+    for(int k = 0; k < 2 ; k++)
+    {
+        short minimo = 4;
+        int valor = mano[k].numero % 13;
+        for(int i = 0; i<5; i++)
+        {
+            if(((mano[i].numero)%13) == valor)
+            {
+                minimo--;
+            }
+        }
+        if(minimo>0)
+        {
+            toReturn = false;
+            break;
+        }
+    }
+
+    return toReturn;
+}
+
+bool Poker::comprobarC()
+{
+    char palo = (mano[0].signo[2]);
+    bool toReturn = true;
+
+    for(int i = 0; i<5; i++){
+        if((mano[i].signo[3]) != palo){
+            toReturn = false;
+        }
+    }
+
+    return toReturn;
+}
+
+bool Poker::comprobarE()
+{
+    ordenarComprobar();
+    bool toReturn = true;
+    int valor[5];
+
+    for(int i = 0; i<5; i++)
+    {
+        valor[i] = (mano[i].numero - 1) % 13;
+    }
+
+    for(int i = 0; i<4 ; i++)
+    {
+        if(!(valor[i+1] == (valor[i] + 1)))
+        {
+            if(!(valor[i+1] == 0 && valor[i] == 12))
+            {
+                toReturn = false;
+            }
+        }
+    }
+
+    ordenar();
+    return toReturn;
+}
+
+bool Poker::comprobarFH()
+{
+    bool toReturn = true;
+    int valor[5];
+    int num1 = 0;
+    int num2 = 0;
+
+    for(int i = 0; i<5; i++)
+    {
+        valor[i] = (mano[i].numero - 1) % 13;
+    }
+
+    num1 = valor[0];
+
+    for(int i = 0; i<5 && num1 == num2; i++)
+    {
+        num2 = valor[i];
+    }
+
+    for(int i = 0; i<5 ; i++)
+    {
+        if(num1 != valor[i] && num2 != valor[i])
+        {
+            toReturn = false;
+        }
+    }
+
+    if(num1 == num2)
+    {
+        toReturn = false;
+    }
+
+    for(int i = 0, j = 0, k = 0; i<5 ; i++)
+    {
+        if(num1 == valor[i])
+        {
+            j++;
+        }
+        if(num2 == valor[i])
+        {
+            k++;
+        }
+        if(j > 3 || k > 3)
+        {
+            toReturn = false;
+        }
+    }
+
+    return toReturn;
+}
+
+bool Poker::comprobarT()
+{
+    bool toReturn = true;
+    int valor[5];
+    int num1 = 0;
+    int repeticiones = 0;
+
+    for(int i = 0; i<5; i++)
+    {
+        valor[i] = (mano[i].numero - 1) % 13;
+    }
+
+    for(int i = 0; i<5 ; i++)
+    {
+        repeticiones = 0;
+        num1 = valor[i];
+        for(int j = 0; j<5 ; j++)
+        {
+            if(num1 == valor[j])
+            {
+                repeticiones++;
+            }
+        }
+        if(repeticiones == 3)
+        {
+            break;
+        }
+    }
+
+    if(repeticiones < 3)
+    {
+        toReturn = false;
+    }
+
+    return toReturn;
+}
+
+bool Poker::comprobarDP()
+{
+    bool toReturn = true;
+
+    int num1 = 0;
+    int num2 = 0;
+    int num3 = 0;
+
+    int valor[5];
+    int repeticiones1 = 0;
+    int repeticiones2 = 0;
+    int repeticiones3 = 0;
+
+    for(int i = 0; i<5; i++)
+    {
+        valor[i] = (mano[i].numero - 1) % 13;
+    }
+
+    num1 = valor[0];
+
+    for(int i = 0; i<5 && num2 == 0; i++)
+    {
+        if(!(valor[i] == num1))
+        {
+            num2 = valor[i];
+            break;
+        }
+    }
+
+    for(int i = 0; i<5 && num3 == 0; i++)
+    {
+        if(!(valor[i] == num1 || valor[i] == num2))
+        {
+            num3 = valor[i];
+            break;
+        }
+    }
+
+
+    for(int j = 0; j<5 ; j++)
+    {
+        if(num1 == valor[j])
+        {
+            repeticiones1++;
+        }
+    }
+
+    for(int j = 0; j<5 ; j++)
+    {
+        if(num2 == valor[j])
+        {
+            repeticiones2++;
+        }
+    }
+
+    for(int j = 0; j<5 ; j++)
+    {
+        if(num3 == valor[j])
+        {
+            repeticiones3++;
+        }
+    }
+
+    if(!((repeticiones1 == 2 && repeticiones2 == 2) || (repeticiones2 == 2 && repeticiones3 == 2) || (repeticiones1 == 2 && repeticiones3 == 2)))
+    {
+        toReturn = false;
+    }
+
+    return toReturn;
+}
+
+bool Poker::comprobarPa()
+{
+    bool toReturn = true;
+
+    int num1 = 0;
+
+    int valor[5];
+    int repeticiones = 0;
+
+    for(int i = 0; i<5; i++)
+    {
+        valor[i] = (mano[i].numero - 1) % 13;
+    }
+
+    for(int i = 0; i<5 ; i++)
+    {
+        repeticiones = 0;
+        num1 = valor[i];
+        for(int j = 0; j<5 ; j++)
+        {
+            if(num1 == valor[j])
+            {
+                repeticiones++;
+            }
+        }
+        if(repeticiones == 2)
+        {
+            break;
+        }
+    }
+
+    if(repeticiones < 2)
+    {
+        toReturn = false;
+    }
+
+    return toReturn;
+}

@@ -1,0 +1,37 @@
+#include "Persona.h"
+#include <string>
+
+using namespace std;
+
+Persona::Persona()
+{
+    //ctor
+}
+
+Persona::~Persona()
+{
+    //dtor
+}
+
+void Persona::setNombre(string nombre)
+{
+    this->nombre = nombre;
+}
+
+string Persona::getNombre()
+{
+    return nombre;
+}
+
+void Persona::setRecord(int record)
+{
+    if(record > 0)
+    {
+        this->record = record;
+    }
+}
+
+int Persona::getRecord()
+{
+    return record;
+}

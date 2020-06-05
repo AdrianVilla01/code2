@@ -1,0 +1,56 @@
+# depslib dependency file v1.0
+1539021800 source:c:\users\admin\desktop\proyecto poker\poker\src\poker.cpp
+	"Poker.h"
+	<iostream>
+	<ctime>
+	<stdlib.h>
+	<conio.h>
+	<string>
+
+1538887939 c:\users\admin\desktop\proyecto poker\poker\include\poker.h
+	<string>
+
+1539024473 source:c:\users\admin\desktop\proyecto poker\poker\src\main.cpp
+	"Poker.h"
+	<iostream>
+	<Persona.h>
+	<fstream>
+	<istream>
+	<vector>
+	<string>
+
+1539020526 source:c:\users\admin\desktop\proyecto poker\poker\src\persona.cpp
+	"Persona.h"
+	<string>
+
+1539021395 c:\users\admin\desktop\proyecto poker\poker\include\persona.h
+	<string>
+
+1539028074 source:c:\users\adangerardogonzaleze\desktop\final\poker\src\main.cpp
+	"Poker.h"
+	<iostream>
+	<Persona.h>
+	<fstream>
+	<istream>
+	<vector>
+	<string>
+
+1538891540 c:\users\adangerardogonzaleze\desktop\final\poker\include\poker.h
+	<string>
+
+1539024996 c:\users\adangerardogonzaleze\desktop\final\poker\include\persona.h
+	<string>
+
+1539024128 source:c:\users\adangerardogonzaleze\desktop\final\poker\src\persona.cpp
+	"Persona.h"
+	<string>
+
+1539028824 source:c:\users\adangerardogonzaleze\desktop\final\poker\src\poker.cpp
+	"Poker.h"
+	<iostream>
+	<ctime>
+	<stdlib.h>
+	<conio.h>
+	<string>
+	<iomanip>
+

@@ -1,0 +1,63 @@
+#ifndef POKER_H
+#define POKER_H
+#include <string>
+
+struct Carta{
+    int numero = 0;
+    std::string signo = "";
+    bool bloqueado = false;
+};
+
+
+class Poker
+{
+    public:
+        // Constructor/Destructor
+        Poker();
+        ~Poker();
+
+        //Set's y Get's
+        void setName(std::string nombre);
+        std::string getName();
+        void setBolsa(int numero);
+        int getBolsa();
+        void setCarta(Carta carta, int posicion);
+        void setCarta(int posicion, int numero = 0, std::string signo = "", bool bloqueado = false);
+        Carta getCarta(int posicion);
+
+        //Funciones
+        void play();
+        void askNombre();
+        void apostar();
+        void askInt(int * numero, std::string mensaje);
+        void askBolsa();
+        void entregarMano();
+        void generateCarta(Carta & carta);
+        void translate(int numero, std::string & texto);
+        void imprimirCartas();
+        void moving(short & movimiento, int & posicion);
+        void cambiarCartas();
+        void ordenar();
+        void ordenarComprobar();
+        void comprobarVictoria();
+        bool comprobarFI();
+        bool comprobarFC();
+        bool comprobarPo();
+        bool comprobarC();
+        bool comprobarE();
+        bool comprobarFH();
+        bool comprobarT();
+        bool comprobarDP();
+        bool comprobarPa();
+
+    protected:
+
+    private:
+        std::string name = "";
+        int bolsa = 100;
+        Carta mano[5];
+        bool mazo [54];
+
+};
+
+#endif // POKER_H
